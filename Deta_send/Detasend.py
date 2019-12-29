@@ -65,6 +65,7 @@ class MyBot(commands.Bot):
     async def on_message(self, message):
         if message.author == message.guild.me or message.webhook_id:
             return
+        """これらのwebhook-globalはFaberSid#7777さん | ID:574166391071047694さんが提供してくださいました！"""
         if message.channel.id in [338151444731658240, 634755270626639882, 628959877443747871]:
             user_img = "https://cdn.discordapp.com/avatars/{0.id}/{0.avatar}.png?size=1024".format(message.author)
             content = message.content.replace("@everyone", "@ everyone").replace("@here", "@ here")
