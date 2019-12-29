@@ -159,28 +159,31 @@ class Bots(commands.Cog):
                 message2 = await ctx.send("この内容をannounceするかしないか？")
                 await message2.add_reaction(no)
                 await message2.add_reaction(ok)
-                react1 = await self.bot.wait_for('reaction_add', timeout=10, check=predicate1(message2, ctx.message.author, self.bot))
-                if react1[0].emoji == ok:
-                    await message2.delete()
-                    if any([True for s in ['.jpg', '.png', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.mp4'] if s in react.content]):
-                        embed = discord.Embed(timestamp=react.created_at)
-                        embed.set_image(url=react.content)
-                    elif react.attachments and react.content:
-                        embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
-                        embed.set_image(url=react.attachments[0].url)
-                    elif react.attachments:
-                        embed = discord.Embed(timestamp=react.created_at)
-                        embed.set_image(url=react.attachments[0].url)
-                    else:
-                        embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
-                    embed.set_author(name="TAOアナウンス!!!", icon_url=react.guild.icon_url)
-                    embed.set_footer(text=react.author, icon_url=react.author.avatar_url)
-                    for channel_id in [634755270626639882, 338151444731658240]:
-                        await self.bot.get_channel(channel_id).send(embed=embed)
-                    return await asyncio.gather(*(c.send(embed=embed) for c in self.bot.get_all_channels() if c.name == 'tao-global'))
+                try:
+                    react1 = await self.bot.wait_for('reaction_add', timeout=10, check=predicate1(message2, ctx.message.author, self.bot))
+                    if react1[0].emoji == ok:
+                        await message2.delete()
+                        if any([True for s in ['.jpg', '.png', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.mp4'] if s in react.content]):
+                            embed = discord.Embed(timestamp=react.created_at)
+                            embed.set_image(url=react.content)
+                        elif react.attachments and react.content:
+                            embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
+                            embed.set_image(url=react.attachments[0].url)
+                        elif react.attachments:
+                            embed = discord.Embed(timestamp=react.created_at)
+                            embed.set_image(url=react.attachments[0].url)
+                        else:
+                            embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
+                        embed.set_author(name="TAOアナウンス!!!", icon_url=react.guild.icon_url)
+                        embed.set_footer(text=react.author, icon_url=react.author.avatar_url)
+                        for channel_id in [634755270626639882, 338151444731658240]:
+                            await self.bot.get_channel(channel_id).send(embed=embed)
+                        return await asyncio.gather(*(c.send(embed=embed) for c in self.bot.get_all_channels() if c.name == 'tao-global'))
 
-                if react1[0].emoji == no:
-                    await message2.delete()
+                    if react1[0].emoji == no:
+                        await message2.delete()
+                except asyncio.TimeoutError:
+                    return
 
     @commands.command(name='roles', description='取得', pass_context=True)
     async def roles(self, ctx):
