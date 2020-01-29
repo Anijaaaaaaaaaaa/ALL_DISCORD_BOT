@@ -4,6 +4,7 @@ import discord
 import aiomysql
 import traceback
 import getpass
+import random
 from discord.ext import commands
 
 no = '👎'
@@ -12,6 +13,14 @@ left = '⏪'
 right = '⏩'
 counts = 0
 admin_id = [304932786286886912, 460208854362357770, 574166391071047694, 294362309558534144, 550248294551650305]
+user_list = []
+
+
+def shuffle(d):
+    keys = list(d.keys())
+    random.shuffle(keys)
+    keys = [(key, d[key]) for key in keys]
+    return dict(keys)
 
 
 def predicate(message, author, l, r, bot):
@@ -147,7 +156,7 @@ class Bots(commands.Cog):
                 await msg.delete()
         except asyncio.TimeoutError:
             pass
-    
+
     @commands.command(name='a', hidden=True)
     async def announce(self, ctx):
         if ctx.message.channel.id in [366373818064830465, 634757295410118656, 636330432702447657] and ctx.message.author.id in admin_id:
@@ -159,37 +168,37 @@ class Bots(commands.Cog):
                 message2 = await ctx.send("この内容をannounceするかしないか？")
                 await message2.add_reaction(no)
                 await message2.add_reaction(ok)
-                try:
-                    react1 = await self.bot.wait_for('reaction_add', timeout=10, check=predicate1(message2, ctx.message.author, self.bot))
-                    if react1[0].emoji == ok:
-                        await message2.delete()
-                        if any([True for s in ['.jpg', '.png', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.mp4'] if s in react.content]):
-                            embed = discord.Embed(timestamp=react.created_at)
-                            embed.set_image(url=react.content)
-                        elif react.attachments and react.content:
-                            embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
-                            embed.set_image(url=react.attachments[0].url)
-                        elif react.attachments:
-                            embed = discord.Embed(timestamp=react.created_at)
-                            embed.set_image(url=react.attachments[0].url)
-                        else:
-                            embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
-                        embed.set_author(name="TAOアナウンス!!!", icon_url=react.guild.icon_url)
-                        embed.set_footer(text=react.author, icon_url=react.author.avatar_url)
-                        for channel_id in [634755270626639882, 338151444731658240]:
-                            await self.bot.get_channel(channel_id).send(embed=embed)
-                        return await asyncio.gather(*(c.send(embed=embed) for c in self.bot.get_all_channels() if c.name == 'tao-global'))
+                react1 = await self.bot.wait_for('reaction_add', timeout=10, check=predicate1(message2, ctx.message.author, self.bot))
+                if react1[0].emoji == ok:
+                    await message2.delete()
+                    if any([True for s in ['.jpg', '.png', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.mp4'] if s in react.content]):
+                        embed = discord.Embed(timestamp=react.created_at)
+                        embed.set_image(url=react.content)
+                    elif react.attachments and react.content:
+                        embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
+                        embed.set_image(url=react.attachments[0].url)
+                    elif react.attachments:
+                        embed = discord.Embed(timestamp=react.created_at)
+                        embed.set_image(url=react.attachments[0].url)
+                    else:
+                        embed = discord.Embed(description=f"発言鯖:{react.guild.name} | チャンネル:{react.channel.name}\n\n{react.content}", timestamp=react.created_at)
+                    embed.set_author(name="TAOアナウンス!!!", icon_url=react.guild.icon_url)
+                    embed.set_footer(text=react.author, icon_url=react.author.avatar_url)
+                    for channel_id in [634755270626639882, 338151444731658240]:
+                        await self.bot.get_channel(channel_id).send(embed=embed)
+                    return await asyncio.gather(*(c.send(embed=embed) for c in self.bot.get_all_channels() if c.name == 'tao-global'))
 
-                    if react1[0].emoji == no:
-                        await message2.delete()
-                except asyncio.TimeoutError:
-                    return
+                if react1[0].emoji == no:
+                    await message2.delete()
 
     @commands.command(name='roles', description='取得', pass_context=True)
     async def roles(self, ctx):
         reactions = ["0⃣", "1⃣", "2⃣", "3⃣"]
         rank_list = ["月島", "幸せの猫遭遇", "チャイナ", "雪の精霊"]
         text = ""
+        if ctx.message.guild.id == 337524390155780107:
+            reactions.append("4⃣")
+            rank_list.append("ドロキンうんち")
         for rankings in zip(reactions, rank_list):
             text += f"{rankings[0]}：`{rankings[1]}`\n"
 
@@ -213,10 +222,10 @@ class Bots(commands.Cog):
                 return await ctx.send(f"{role.name}役職を{ctx.message.author.mention}さんに付与しました。")
         except asyncio.TimeoutError:
             pass
-    
+
     @commands.command(name='minecraft', pass_context=True)
     async def minecraft(self, ctx):
-        role = discord.utils.get(ctx.message.guild.roles, name=f"minecraft")                
+        role = discord.utils.get(ctx.message.guild.roles, name=f"minecraft")
         if role not in ctx.message.guild.roles:
             await ctx.message.guild.create_role(name=f"minecraft", mentionable=True)
         await ctx.message.author.add_roles(role)
@@ -323,11 +332,14 @@ class Bots(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message, level=None, role_name=None):
         try:
-            if isinstance(message.channel, discord.DMChannel):
+            if isinstance(message.channel, discord.DMChannel) and message.author != self.bot.user:
                 return await message.channel.send(embed=discord.Embed(description=f"{message.author.mention}さん。\nこのBOTはDM対応外です...", color=0xC41415))
-                    
+
+            if message.channel.id == 668071221165817894:
+                return await message.publish()
+
             if len(message.embeds) != 0 and message.author.id == 526620171658330112 and message.embeds[0].title:
-                if message.embeds[0].title[-7:] == "のステータス:":
+                if "のステータス" in message.embeds[0].title[-7:]:
                     for f in message.embeds[0].fields:
                         if f.name == "Lv":
                             level = int(f.value)
@@ -370,7 +382,11 @@ class Bots(commands.Cog):
                                 if channel.name == '役職更新ログ':
                                     return await channel.send(embed=embed)
 
-            if len(message.embeds) != 0 and message.embeds[0].title and "【超激レア】" in message.embeds[0].title:
+            if message.guild.id == 337524390155780107 and message.author.id == 247671415715790849:
+                role = discord.utils.get(message.guild.roles, name=f"ドロキンうんち報告OK")
+                return await message.channel.send(f"{role.mention}～ドロキンさんが出たらしいぜ！")
+
+            if len(message.embeds) != 0 and message.embeds[0].title and "【超激レア】" in message.embeds[0].title and message.author.id == 526620171658330112:
                 lists = re.findall(r'([0-9]+)', f"{message.embeds[0].title}")
                 if "月島" in message.embeds[0].title:
                     role_name = "月島"
@@ -401,19 +417,14 @@ class Bots(commands.Cog):
                     await message.delete()
                     embed = discord.Embed(title="このチャンネルでは宣伝は禁止です！", description="{0}さん\nもし鯖の宣伝をしたいなら{1}でやってください！".format(message.author.mention, channel.mention))
                     return await message.channel.send(embed=embed)
-    
+
             if message.channel.name == "tao-global":
                 async with aiomysql.connect(host="localhost", user="root", db="role", password="") as conn:
                     async with conn.cursor() as cur:
-                        if await cur.execute('SELECT 1 FROM get WHERE author_id=%s;', (message.author.id,)):
-                            return 
-        
-                        elif message.author == self.bot.user or message.author.bot and not message.author.id == 526620171658330112:
+                        if await cur.execute('SELECT 1 FROM get WHERE author_id=%s;', (message.author.id,)) or message.author == self.bot.user or message.author.bot and message.author.id != 526620171658330112:
                             return
-                        
                         elif message.embeds and message.embeds[0]:
-                            await message.channel.send(embed=message.embeds[0])
-                        
+                            return await message.channel.send(embed=message.embeds[0])
                         elif any([True for s in ['.jpg', '.png', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.mp4'] if s in message.content]):
                             embed = discord.Embed(timestamp=message.created_at)
                             embed.set_image(url=message.content)
@@ -425,11 +436,17 @@ class Bots(commands.Cog):
                             embed.set_image(url=message.attachments[0].url)
                         else:
                             embed = discord.Embed(description=message.content, timestamp=message.created_at)
-                        embed.set_author(name=message.guild.name, icon_url=message.guild.icon_url)
-                        embed.set_footer(text=message.author, icon_url=message.author.avatar_url)
+                        embed.set_author(name=message.guild.name, icon_url="https://cdn.discordapp.com/icons/{0.id}/{0.icon}.png?size=1024".format(message.guild))
+                        embed.set_footer(text=message.author, icon_url="https://cdn.discordapp.com/avatars/{0.id}/{0.avatar}.png?size=1024".format(message.author))
                         await message.delete()
-                        return await asyncio.gather(*(c.send(embed=embed) for c in self.bot.get_all_channels() if c.name == 'tao-global'))
-                        
+                        try:
+                            return await asyncio.gather(*(c.send(embed=embed) for c in self.bot.get_all_channels() if c.name == 'tao-global'))
+                        except Exception as _:
+                            pass
+
+        except discord.errors.Forbidden:
+            return
+
         except Exception as error:
             text = ""
             for x in traceback.format_exception(type(error), error, error.__traceback__):
@@ -440,6 +457,18 @@ class Bots(commands.Cog):
                     await self.bot.get_channel(635114963698188298).send(embed=discord.Embed(description=f"```py\n{text}```", timestamp=message.created_at))
                     text = x
             await self.bot.get_channel(635114963698188298).send(embed=discord.Embed(description=f"```py\n{text}```", timestamp=message.created_at))
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        try:
+            if before.guild.id == 337524390155780107:
+                if any([True for s in ["DISCORD.GG", "DISBOARD.ORG", "BIT.LY", "DISCORDAPP", "INVITE.GG", "DISCORD.COM"] if s in after.content.upper()]) and not before.author.bot and before.channel.id != 421954703509946368:
+                    channel = self.bot.get_channel(657769986303066113)
+                    embed = discord.Embed(title="このチャンネルでは宣伝は禁止です！", description="{0}さん\nもし鯖の宣伝をしたいなら{1}でやってください！".format(after.author.mention, channel.mention))
+                    await after.author.send(embed=embed)
+                    return await after.delete()
+        except AttributeError:
+            pass
 
 
 def setup(bot):
